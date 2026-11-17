@@ -18,15 +18,17 @@ export PYTHONDONTWRITEBYTECODE := 1
 BANDIT_SKIPS = $(shell $(PY) scripts/open_bugs.py bandit)
 AUDIT_IGNORES = $(shell $(PY) scripts/open_bugs.py pip-audit)
 
-.PHONY: setup run test test-seeded lint register register-check scan audit check report
+.PHONY: setup run test test-seeded lint register register-check scan audit build check report
 
 setup:
 	$(PYTHON_BOOT) -c "import sys; sys.exit('Python 3.11+ required' if sys.version_info < (3, 11) else 0)"
 	$(PYTHON_BOOT) -m venv .venv
 	$(PY) -m pip install --quiet --upgrade pip
 	$(PY) -m pip install --quiet -r requirements.txt -r requirements-dev.txt
+ifndef CI
 	git config core.hooksPath .githooks
 	$(PY) -m pre_commit install-hooks
+endif
 
 run:
 	$(PY) -m app
@@ -53,7 +55,12 @@ scan:
 audit:
 	$(PY) -m pip_audit --progress-spinner off -r requirements.txt $(AUDIT_IGNORES)
 
-check: lint register-check test scan audit
+# Build/import check: every module compiles and the app factory starts and serves /health.
+build:
+	$(PY) -m compileall -q app scripts
+	$(PY) -c "from app import create_app; assert create_app().test_client().get('/health').status_code == 200; print('build: app imports and serves /health')"
+
+check: lint register-check test scan audit build
 
 report:
 	$(PY) -m app.reports
