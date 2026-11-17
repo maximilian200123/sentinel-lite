@@ -1,0 +1,13 @@
+# Everything is owned by the repository owner. The lines below name the paths whose
+# changes steer the AI agent or the pipeline, so they are reviewed like code (R-03, R-04).
+# Route 4 note: GitHub Free cannot *enforce* code-owner review on a private repo; the
+# PR template's checklist asks the author to confirm these paths were reviewed.
+*                 @maximilian200123
+/.github/         @maximilian200123
+/.claude/         @maximilian200123
+/CLAUDE.md        @maximilian200123
+/memory/          @maximilian200123
+/skills/          @maximilian200123
+/rules/           @maximilian200123
+/.pre-commit-config.yaml @maximilian200123
+/.gitleaks.toml   @maximilian200123

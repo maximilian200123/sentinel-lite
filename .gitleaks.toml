@@ -1,0 +1,14 @@
+# gitleaks config: default rules plus one for this service's own key format.
+# The default generic-api-key rule skips values containing placeholder words such as
+# "FAKE", which is how the seeded key is marked. A prefix-specific rule (the way
+# GitHub's ghp_ tokens are found) has no such blind spot.
+title = "sentinel-lite"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "sentinel-api-key"
+description = "Sentinel-Lite service API key (sl_api_ prefix)"
+regex = '''sl_api_[A-Za-z0-9]{20,}'''
+keywords = ["sl_api_"]

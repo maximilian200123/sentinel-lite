@@ -1,0 +1,6 @@
+#!/bin/sh
+# Refuses pushes to main and non-fast-forward (force) pushes. See scripts/guard_push.py.
+root="$(git rev-parse --show-toplevel)"
+py="$root/.venv/bin/python"
+[ -x "$root/.venv/Scripts/python.exe" ] && py="$root/.venv/Scripts/python.exe"
+exec "$py" "$root/scripts/guard_push.py" "$@"

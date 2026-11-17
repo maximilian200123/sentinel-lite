@@ -1,0 +1,11 @@
+# pip-audit -r requirements.txt on tag baseline-vulnerable
+
+Found 6 known vulnerabilities in 1 package
+Name     Version ID              Fix Versions Aliases
+-------- ------- --------------- ------------ -----------------------------------
+requests 2.31.0  PYSEC-2026-1873 2.32.0       CVE-2024-35195, GHSA-9wx4-h78v-vm56
+requests 2.31.0  PYSEC-2026-1872 2.32.4       GHSA-9hjg-9r4m-mvj7, CVE-2024-47081
+requests 2.31.0  PYSEC-2026-2275 2.33.0       CVE-2026-25645, GHSA-gc5v-m9x4-r6x2
+requests 2.31.0  PYSEC-2026-1873 2.32.0       CVE-2024-35195, GHSA-9wx4-h78v-vm56
+requests 2.31.0  PYSEC-2026-1872 2.32.4       GHSA-9hjg-9r4m-mvj7, CVE-2024-47081
+requests 2.31.0  PYSEC-2026-2275 2.33.0       CVE-2026-25645, GHSA-gc5v-m9x4-r6x2
