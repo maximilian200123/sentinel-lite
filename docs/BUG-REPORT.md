@@ -113,3 +113,27 @@ Line numbers refer to the tag: `git show baseline-vulnerable:<path>`.
   - One shared static key: anyone holding it has full access, there are no per-client identities or scopes, and rotation is manual (edit `.env`, restart).
   - No rate limiting, so a key can be guessed online slowly. A 32-byte random key makes that impractical, but nothing records the attempts.
   - Plain HTTP on loopback. Exposing the service beyond localhost would need TLS in front.
+
+## B-07, Log injection and sensitive data in logs
+
+- **Risk IDs / CWE:** R-09, R-02 / CWE-117 (improper output neutralization for logs), CWE-532 (sensitive information in log file). Related ATT&CK: T1070 (indicator removal), which forged lines make easier, and T1552.001 for the key in the log file.
+- **Where:** `app/__init__.py:35-38` on `baseline-vulnerable`: `log.info("ingest user=%s message=%s headers=%s", raw.get("user"), raw.get("message"), dict(request.headers))`.
+- **How it was introduced:** logging the whole request "for debugging" is a habit, and `%s` formatting looks safe because it isn't string concatenation. But `%s` copies CR/LF through unchanged, and the headers dict includes `X-Api-Key`.
+- **How it can be exploited:**
+  - Send an event whose `message` contains `\n` followed by a fake line, for example `FORGED admin login accepted`. Whoever reads the log, or a line-based parser feeding a SIEM, sees two events, one of them written by the attacker.
+  - Separately, every authenticated request writes the client's key into the log. Anyone who can read the log (backups, a log shipper, a support bundle) can then call the API.
+  - Safe reproduction: `tests/test_seeded_bugs.py::test_b07_log_lines_cannot_be_forged` and `::test_b07_api_key_never_logged` fail on the tag. `docs/evidence/b07-logs.md` shows the forged line and the leaked key.
+- **Impact on this app (C/I/A):** I = 4 for the audit trail, which is the evidence an incident review relies on. C = 4, because the key in the log is full API access (B-06).
+- **Blast radius beyond this app:**
+  - Logs travel further than the app: rotated files, backups, a future log shipper, a screenshot in a bug report. The key leaks with them, and so does user-supplied text that may itself contain secrets.
+  - Forged lines can hide a real B-02 or B-04 exploitation attempt among fake "all fine" entries.
+  - Chains with B-01: before the B-01 fix, the leaked value was the one hardcoded in source.
+- **Likelihood x Impact before / after:** shared rows. R-09 goes from 4 x 5 = 20 to 1 x 4 = 4, and R-02 from 4 x 5 = 20 to 2 x 4 = 8.
+- **The fix (PR #8):** `app/logsafe.py` adds a `SafeLogFilter` on the `sentinel` logger.
+  - It renders each message, redacts the configured API key and any `sl_api_…` value, then escapes every control character (`\n` → `\x0a`), so one call always produces exactly one line.
+  - The ingest log line no longer includes headers at all. It logs only `user`, `src_ip` and `message`.
+- **Proof the fix works:** both `test_b07_*` tests pass. `docs/evidence/b07-logs.md` shows the before and after of the same request.
+- **Residual risk:**
+  - The filter covers only the `sentinel` logger. Flask's and Werkzeug's own loggers are not filtered, though they don't log request bodies or headers.
+  - Redaction knows only the configured key and the `sl_api_` format. Another secret pasted into an event message would still be logged, escaped but in clear.
+  - Escaping keeps lines intact, but it doesn't make the content trustworthy. A reader still has to treat `message=` as attacker-controlled.

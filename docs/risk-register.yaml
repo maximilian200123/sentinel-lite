@@ -30,9 +30,9 @@ risks:
     control: "Key read from the environment (.env.example documents it); gitleaks in pre-commit and in CI; log redaction of tokens. L drops because two independent scanners must both miss a key; I drops to 4 because the key no longer lives in history or logs, but a leaked key still opens the API."
     residual_likelihood: 2
     residual_impact: 4
-    evidence: "app/config.py; .env.example; scripts/init_env.py; tests/test_seeded_bugs.py::test_b01_api_key_comes_from_environment; .gitleaks.toml; .github/workflows/ci.yml; docs/evidence/gitleaks-refusal.md"
+    evidence: "app/config.py; .env.example; scripts/init_env.py; tests/test_seeded_bugs.py::test_b01_api_key_comes_from_environment; .gitleaks.toml; .github/workflows/ci.yml; docs/evidence/gitleaks-refusal.md; app/logsafe.py; tests/test_seeded_bugs.py::test_b07_api_key_never_logged"
     owner: "repo owner"
-    status: Open
+    status: Implemented
   - id: R-03
     register: Operational
     asset: "AI agent context: CLAUDE.md, memory/, skills/"
@@ -135,9 +135,9 @@ risks:
     control: "API key required on ingest and admin, compared with hmac.compare_digest; debug off; bound to 127.0.0.1; newlines and control characters escaped in logs. L drops to 1 because an attacker now needs the key and local access."
     residual_likelihood: 1
     residual_impact: 4
-    evidence: "app/__init__.py; tests/test_seeded_bugs.py::test_b06_endpoints_require_api_key; tests/test_seeded_bugs.py::test_b06_debug_mode_is_off; docs/evidence/b06-live.md"
+    evidence: "app/__init__.py; tests/test_seeded_bugs.py::test_b06_endpoints_require_api_key; tests/test_seeded_bugs.py::test_b06_debug_mode_is_off; docs/evidence/b06-live.md; app/logsafe.py; tests/test_seeded_bugs.py::test_b07_log_lines_cannot_be_forged; docs/evidence/b07-logs.md"
     owner: "repo owner"
-    status: Open
+    status: Implemented
   - id: R-10
     register: External
     asset: "Analyst triage queue fed by ingested events"
