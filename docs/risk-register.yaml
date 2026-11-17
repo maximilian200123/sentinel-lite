@@ -75,9 +75,9 @@ risks:
     control: "All runtime dependencies pinned with ==, requests upgraded past every known advisory, pip-audit runs in make check and in CI and fails on any finding. L stays 2 because new CVEs are published between runs."
     residual_likelihood: 2
     residual_impact: 3
-    evidence: ""
+    evidence: "requirements.txt; constraints.txt; scripts/lock.py; tests/test_repo_policy.py::test_b08_runtime_dependencies_are_pinned; tests/test_repo_policy.py::test_b08_no_dependency_below_fixed_version; tests/test_repo_policy.py::test_b08_lock_matches_requirements; docs/evidence/b08-deps.md"
     owner: "repo owner"
-    status: Open
+    status: Implemented
   - id: R-06
     register: Operational
     asset: "main branch review quality"

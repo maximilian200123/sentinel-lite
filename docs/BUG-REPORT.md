@@ -200,3 +200,29 @@ Line numbers refer to the tag: `git show baseline-vulnerable:<path>`.
 - **Residual risk:**
   - Whoever can edit `rules/` still controls *what* is detected, for example a rule that never matches. That is a review problem, which is why `rules/` is in CODEOWNERS.
   - A rule with a very broad `contains` (like `"a"`) passes the schema and raises every event's score.
+
+## B-08, Unpinned and vulnerable runtime dependencies
+
+- **Risk IDs / CWE / ATT&CK:** R-05 / CWE-1104 (use of unmaintained third-party components), CWE-1395 (dependency on vulnerable third-party component) / T1195.001 (supply chain compromise: software dependencies).
+- **Where:** `requirements.txt:1-3` on `baseline-vulnerable`. `flask` and `pyyaml` have no version, and `requests==2.31.0` carries three published advisories: CVE-2024-35195, CVE-2024-47081 and CVE-2026-25645 (`docs/evidence/pip-audit-baseline.txt`).
+- **How it was introduced:** a bare name "always gets the latest, so it's always patched". And an old pin copied from a tutorial stays because it still works. Nobody re-reads `requirements.txt` once the app runs.
+- **How it can be exploited:**
+  - A bare name installs whatever is newest at install time. A hijacked or malicious release published an hour earlier is installed with no review, and two clones of the same commit can run different code.
+  - requests 2.31.0 is exposed to the published issues. CVE-2024-35195 means a session that once disabled TLS verification keeps it off for later requests to the same host. CVE-2024-47081 leaks `.netrc` credentials to a crafted URL. The `MispProvider` uses a `requests` session, so those paths are live once MISP is configured.
+  - Safe reproduction: `tests/test_repo_policy.py::test_b08_runtime_dependencies_are_pinned` and `::test_b08_no_dependency_below_fixed_version` fail on the tag, and `pip-audit` reports 3 advisories.
+- **Impact on this app (C/I/A):** C = 3 (MISP credentials, intel queries), I = 3 (a compromised dependency runs inside the service), A = 2.
+- **Blast radius beyond this app:**
+  - A dependency runs at install time (`setup.py`, build hooks) with the developer's full rights, before any test.
+  - It reaches `~/.ssh`, the gh token, the git credential helper and every other project on the machine.
+  - The `.netrc` leak would expose credentials for whatever host `.netrc` lists, not just MISP.
+- **Likelihood x Impact before / after:** R-05 goes from 4 x 3 = 12 (Medium) to 2 x 3 = 6 (Low). Likelihood stays 2 because new advisories keep being published after the pin.
+- **The fix (PR #12):**
+  - `requirements.txt` pins the three direct dependencies with `==`, with requests at 2.34.2, which is past every advisory and older than 14 days.
+  - `constraints.txt` pins the whole tree (13 packages). `scripts/lock.py` (`make lock`) generates it by resolving with `pip --uploaded-prior-to P14D`, so the cooldown is enforced by the tool, not by memory. `make setup` installs with `-c constraints.txt`.
+  - `make audit` audits the full lock with `--no-deps`, and B-08 leaves `scripts/open_bugs.py`, so the three pip-audit ignores are gone.
+  - The new test `test_b08_lock_matches_requirements` fails if the direct pins and the lock drift apart.
+- **Proof the fix works:** all three `test_b08_*` tests pass. `docs/evidence/b08-deps.md` shows the pins, the lock and a clean `pip-audit` with no ignores.
+- **Residual risk:**
+  - Pins without hashes. A compromised index could serve a different file under the same version. `pip install --require-hashes` would close that, at the cost of a heavier lock workflow.
+  - The pins age. A new advisory against a pinned version fails `make check` and CI, which is the intended alarm, but someone still has to bump it. Dependabot only watches GitHub Actions here.
+  - The dev tools in `requirements-dev.txt` are pinned but not part of the runtime lock or the audit.

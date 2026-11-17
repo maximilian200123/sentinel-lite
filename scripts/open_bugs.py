@@ -16,7 +16,6 @@ import sys
 
 OPEN_BUGS: dict[str, dict[str, list[str]]] = {
     "B-05": {},
-    "B-08": {"pip-audit": ["PYSEC-2026-1873", "PYSEC-2026-1872", "PYSEC-2026-2275"]},
 }
 
 
