@@ -15,7 +15,7 @@ risks:
     control: "Local no-commit-to-branch and pre-push guard refuse commits on main, pushes to main and non-fast-forward pushes; Claude Code deny rules plus a PreToolUse hook block the same commands for the agent; governance workflow flags any commit on main without a merged PR. L drops to 2, not 1: client-side hooks can be skipped with --no-verify and the workflow detects after the fact instead of preventing."
     residual_likelihood: 2
     residual_impact: 4
-    evidence: ".githooks/pre-push; scripts/guard_push.py; .github/workflows/governance.yml; docs/evidence/push-refusals.md; docs/evidence/commit-on-main-refused.md; docs/evidence/github-route.md"
+    evidence: ".githooks/pre-push; scripts/guard_push.py; .github/workflows/governance.yml; .claude/hooks/guard.py; docs/evidence/push-refusals.md; docs/evidence/commit-on-main-refused.md; docs/evidence/github-route.md"
     owner: "repo owner"
     status: Implemented
   - id: R-02
@@ -45,9 +45,9 @@ risks:
     control: "CODEOWNERS covers memory/, skills/, .claude/ so changes arrive by PR; the dangerous actions are blocked by deny rules and a PreToolUse hook, so a poisoned note can persuade but cannot compel. I drops because the hook removes the worst outcomes; L drops because poisoned text must survive a PR review."
     residual_likelihood: 2
     residual_impact: 3
-    evidence: ""
+    evidence: ".claude/settings.json; .claude/hooks/guard.py; tests/test_repo_policy.py::test_b10_hook_blocks_dangerous_agent_action; docs/evidence/hook-blocks.md; .github/CODEOWNERS"
     owner: "repo owner"
-    status: Open
+    status: Implemented
   - id: R-04
     register: Operational
     asset: "CI pipeline and its GITHUB_TOKEN"
