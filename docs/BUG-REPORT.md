@@ -137,3 +137,20 @@ Line numbers refer to the tag: `git show baseline-vulnerable:<path>`.
   - The filter covers only the `sentinel` logger. Flask's and Werkzeug's own loggers are not filtered, though they don't log request bodies or headers.
   - Redaction knows only the configured key and the `sl_api_` format. Another secret pasted into an event message would still be logged, escaped but in clear.
   - Escaping keeps lines intact, but it doesn't make the content trustworthy. A reader still has to treat `message=` as attacker-controlled.
+
+## B-02, SQL injection in event search
+
+- **Risk IDs / CWE / ATT&CK:** R-07 / CWE-89 (SQL injection) / T1190 (exploit public-facing application).
+- **Where:** `app/store.py:48` on `baseline-vulnerable`: `query = f"SELECT doc FROM events WHERE user = '{user}' ORDER BY id"`, reached from `GET /events/search?user=` (`app/__init__.py:43-47`).
+- **How it was introduced:** an f-string is the most readable way to write the query. The quotes around `{user}` make it look escaped, and `insert()` a few lines above uses placeholders correctly, so the file looks consistent at a glance.
+- **How it can be exploited:** `user=x' OR '1'='1` returns every stored event. `user=x' UNION SELECT …` runs any SELECT the attacker writes. In `docs/evidence/b02-sqli.md` it returns `sqlite_version()` through the API. Safe reproduction: `tests/test_seeded_bugs.py::test_b02_search_is_not_injectable` fails on the tag, and `scripts/probes/b02_sqli.py` prints the leak on the tag and nothing on `main`.
+- **Impact on this app (C/I/A):** C = 4, because all events (users, IPs, messages, threat matches) are readable. SQLite's Python driver refuses stacked queries in `execute()`, which limits writes through this path, but the same habit in a write query would give I = 4.
+- **Blast radius beyond this app:**
+  - The events are security telemetry about *other* systems: who logged in where, which hosts talk to C2 IPs. Leaking them tells an attacker what the defenders can see.
+  - Chains with B-06: before PR #7 no key was needed, so anyone who could reach the port could dump the store. Chains with B-07: the probe's payload would also have forged log lines.
+- **Likelihood x Impact before / after:** R-07 goes from 4 x 4 = 16 (High) to 1 x 4 = 4 (Low) once B-03 is also fixed.
+- **The fix (PR #9):** the query uses a `?` placeholder and passes `(user,)` as a parameter, so the value can never become SQL. bandit's `B608` exception leaves `scripts/open_bugs.py` with the bug, so `make check` and CI now fail on any string-built query.
+- **Proof the fix works:** `test_b02_search_is_not_injectable` passes. bandit reports no `B608`. `docs/evidence/b02-sqli.md` shows the same three payloads before (2 rows, then the DB version) and after (0 rows, 0 rows).
+- **Residual risk:**
+  - Placeholders protect values, not identifiers. A future feature that lets the user choose a column or sort order needs an allowlist.
+  - The search still returns all events for a user to any key holder, because there are no per-user permissions.
