@@ -6,7 +6,7 @@ import os
 
 from flask import Flask, jsonify, request, send_file
 
-from app import config, store
+from app import config, logsafe, store
 from app.intel import IntelProvider, LocalFeedProvider
 from app.pipeline import INDICATOR_TAG, process
 from app.rules import load_rules
@@ -20,6 +20,7 @@ def create_app(overrides: dict | None = None, intel: IntelProvider | None = None
     app.config.from_mapping(overrides or {})
     # Debug stays off (Flask's default): the Werkzeug debugger is a remote Python console.
 
+    logsafe.install(log, [app.config["API_KEY"]])
     store.init(app.config["DB_PATH"])
     state = {
         "intel": intel or LocalFeedProvider(app.config["INTEL_FEED"]),
@@ -44,10 +45,8 @@ def create_app(overrides: dict | None = None, intel: IntelProvider | None = None
     @app.post("/ingest")
     def ingest():
         raw = request.get_json(force=True)
-        log.info(
-            "ingest user=%s message=%s headers=%s",
-            raw.get("user"), raw.get("message"), dict(request.headers),
-        )
+        log.info("ingest user=%s src_ip=%s message=%s",
+                 raw.get("user"), raw.get("src_ip"), raw.get("message"))
         event = process(raw, state["intel"], state["rules"])
         event_id = store.insert(app.config["DB_PATH"], event)
         return jsonify({"id": event_id, "event": event}), 201
