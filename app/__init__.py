@@ -2,9 +2,10 @@
 
 import hmac
 import logging
-import os
+import re
+from pathlib import Path
 
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request, send_from_directory
 
 from app import config, logsafe, store
 from app.intel import IntelProvider, LocalFeedProvider
@@ -12,6 +13,7 @@ from app.pipeline import INDICATOR_TAG, process
 from app.rules import load_rules
 
 log = logging.getLogger("sentinel")
+REPORT_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}\.txt")
 
 
 def create_app(overrides: dict | None = None, intel: IntelProvider | None = None) -> Flask:
@@ -57,12 +59,14 @@ def create_app(overrides: dict | None = None, intel: IntelProvider | None = None
         events = store.search_by_user(app.config["DB_PATH"], user)
         return jsonify({"count": len(events), "events": events})
 
-    @app.get("/reports/<path:name>")
+    @app.get("/reports/<name>")
     def report(name):
-        path = os.path.join(app.config["REPORTS_DIR"], name)
-        if not os.path.isfile(path):
+        # One plain file name, no separators or dots-only names, served only from REPORTS_DIR.
+        reports_dir = Path(app.config["REPORTS_DIR"]).resolve()
+        path = (reports_dir / name).resolve()
+        if not REPORT_NAME.fullmatch(name) or path.parent != reports_dir or not path.is_file():
             return {"error": "report not found"}, 404
-        return send_file(path, mimetype="text/plain")
+        return send_from_directory(reports_dir, name, mimetype="text/plain")
 
     @app.get("/intel/check")
     def intel_check():
