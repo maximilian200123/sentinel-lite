@@ -1,0 +1,155 @@
+# Source of truth for RISK-REGISTER.xlsx and RISK-REGISTER.md.
+# Edit this file, then run `make register`. CI fails if the generated files drift.
+# Scores use the template's Scales sheet (1-5). Inherent and residual scores are
+# computed by the workbook formulas, never typed in.
+risks:
+  - id: R-01
+    register: Operational
+    asset: "main branch of sentinel-lite (the code the professor clones)"
+    threat: "AI agent or student pushes straight to main or force-pushes, landing unreviewed code or rewriting history"
+    attack: ""
+    vulnerability: "Agent runs git with the student's push rights; GitHub Free gives no server-side branch protection on a private repo"
+    bugs: [B-10]
+    likelihood: 4
+    impact: 4
+    control: "Local no-commit-to-branch and pre-push guard refuse commits on main, pushes to main and non-fast-forward pushes; Claude Code deny rules plus a PreToolUse hook block the same commands for the agent; governance workflow flags any commit on main without a merged PR. L drops to 2, not 1: client-side hooks can be skipped with --no-verify and the workflow detects after the fact instead of preventing."
+    residual_likelihood: 2
+    residual_impact: 4
+    evidence: ""
+    owner: "repo owner"
+    status: Open
+  - id: R-02
+    register: Operational
+    asset: "Service API key and any credential the agent can read"
+    threat: "Plaintext key committed to source or written to logs, then read by anyone with a clone or the log file"
+    attack: "T1552.001"
+    vulnerability: "API key hardcoded in app/config.py; request headers logged verbatim"
+    bugs: [B-01, B-07]
+    likelihood: 4
+    impact: 5
+    control: "Key read from the environment (.env.example documents it); gitleaks in pre-commit and in CI; log redaction of tokens. L drops because two independent scanners must both miss a key; I drops to 4 because the key no longer lives in history or logs, but a leaked key still opens the API."
+    residual_likelihood: 2
+    residual_impact: 4
+    evidence: ""
+    owner: "repo owner"
+    status: Open
+  - id: R-03
+    register: Operational
+    asset: "AI agent context: CLAUDE.md, memory/, skills/"
+    threat: "Memory poisoning (MITRE ATLAS AI agent context poisoning): a planted note steers later agent sessions to push to main, skip tests or read secrets"
+    attack: "ATLAS AML.T0051.001"
+    vulnerability: "Memory and skill files are trusted context, not reviewed, and nothing enforces the rules they state"
+    bugs: [B-10]
+    likelihood: 3
+    impact: 4
+    control: "CODEOWNERS covers memory/, skills/, .claude/ so changes arrive by PR; the dangerous actions are blocked by deny rules and a PreToolUse hook, so a poisoned note can persuade but cannot compel. I drops because the hook removes the worst outcomes; L drops because poisoned text must survive a PR review."
+    residual_likelihood: 2
+    residual_impact: 3
+    evidence: ""
+    owner: "repo owner"
+    status: Open
+  - id: R-04
+    register: Operational
+    asset: "CI pipeline and its GITHUB_TOKEN"
+    threat: "A third-party action's moving tag is repointed to malicious code, or a PR's code runs under pull_request_target with a write token"
+    attack: "T1195.002"
+    vulnerability: "Actions referenced by @v4 tags, permissions: write-all, pull_request_target checking out PR code"
+    bugs: [B-09]
+    likelihood: 3
+    impact: 5
+    control: "Every action pinned to a full commit SHA (tag in a comment), workflow default permissions contents: read, pull_request_target removed, zizmor lints the workflows. L drops to 1 because a SHA cannot be repointed; I stays 4 because a pinned action that was already malicious still runs."
+    residual_likelihood: 1
+    residual_impact: 4
+    evidence: ""
+    owner: "repo owner"
+    status: Open
+  - id: R-05
+    register: Operational
+    asset: "Runtime dependencies (requirements.txt)"
+    threat: "A dependency with a published CVE ships, or an unpinned install silently pulls a different version"
+    attack: "T1195.001"
+    vulnerability: "Unpinned requirements plus requests 2.31.0 (CVE-2024-35195, CVE-2024-47081, CVE-2026-25645)"
+    bugs: [B-08]
+    likelihood: 4
+    impact: 3
+    control: "All runtime dependencies pinned with ==, requests upgraded past every known advisory, pip-audit runs in make check and in CI and fails on any finding. L stays 2 because new CVEs are published between runs."
+    residual_likelihood: 2
+    residual_impact: 3
+    evidence: ""
+    owner: "repo owner"
+    status: Open
+  - id: R-06
+    register: Operational
+    asset: "main branch review quality"
+    threat: "An unreviewed or weakly reviewed change reaches main because the only reviewer is the author plus the agent that wrote it"
+    attack: ""
+    vulnerability: "No second human reviewer and no automated reviewer: Copilot review is not in Copilot Free and no model API key is available"
+    bugs: []
+    likelihood: 4
+    impact: 4
+    control: "PR template with a mandatory self-review checklist and a local skills/review-pr pass whose findings go in every PR body; CI checks run on every PR. Review is agent-assisted, not an enforced gate, so L only drops to 3. An Actions-based reviewer with a stored API key would bring it to 2."
+    residual_likelihood: 3
+    residual_impact: 4
+    evidence: ""
+    owner: "repo owner"
+    status: Open
+  - id: R-07
+    register: Internal
+    asset: "Stored security events (SQLite) and generated reports"
+    threat: "Caller of the API dumps or alters stored events via SQL injection, or reads arbitrary files via path traversal"
+    attack: "T1190"
+    vulnerability: "String-formatted SQL in /events/search; /reports/<name> joins user input to a path without checks"
+    bugs: [B-02, B-03]
+    likelihood: 4
+    impact: 4
+    control: "Parameterized queries; report names resolved and confined to reports/ with an allowlist. Regression tests send the exact payloads. L drops to 1 because both classes are removed, not filtered."
+    residual_likelihood: 1
+    residual_impact: 4
+    evidence: ""
+    owner: "repo owner"
+    status: Open
+  - id: R-08
+    register: Internal
+    asset: "Ingest normaliser and detection rules"
+    threat: "Malformed or oversized events crash the normaliser, or a crafted rule file runs code when rules are reloaded; detections go blind"
+    attack: "T1499.004"
+    vulnerability: "No input validation or body size limit on /ingest; rules loaded with an unsafe YAML loader"
+    bugs: [B-04, B-05]
+    likelihood: 4
+    impact: 4
+    control: "Pydantic model validates every event, request bodies capped, bad input returns 400 not 500; rules loaded with yaml.safe_load and checked against a schema. I drops to 3 because a flood of valid events can still slow ingest."
+    residual_likelihood: 2
+    residual_impact: 3
+    evidence: ""
+    owner: "repo owner"
+    status: Open
+  - id: R-09
+    register: Internal
+    asset: "Service control plane (/ingest, /admin/*) and its audit log"
+    threat: "Anyone who can reach the port injects events, reloads rules or uses the debug console; forged log lines hide the activity"
+    attack: "T1190"
+    vulnerability: "No authentication on ingest and admin; Flask debug=True; user input written to logs unescaped"
+    bugs: [B-06, B-07]
+    likelihood: 4
+    impact: 5
+    control: "API key required on ingest and admin, compared with hmac.compare_digest; debug off; bound to 127.0.0.1; newlines and control characters escaped in logs. L drops to 1 because an attacker now needs the key and local access."
+    residual_likelihood: 1
+    residual_impact: 4
+    evidence: ""
+    owner: "repo owner"
+    status: Open
+  - id: R-10
+    register: External
+    asset: "Analyst triage queue fed by ingested events"
+    threat: "Traffic from known-malicious IPs is stored with the same risk score as clean traffic and goes unnoticed"
+    attack: "T1071"
+    vulnerability: "No correlation of src_ip against threat intelligence"
+    bugs: []
+    likelihood: 4
+    impact: 4
+    control: "Ingest enriches every event through an IntelProvider (local feed, MISP provider available); a match adds threat.indicator.matched and raises risk_score. L stays 2 because the feed is only as fresh as its last pull."
+    residual_likelihood: 2
+    residual_impact: 3
+    evidence: ""
+    owner: "repo owner"
+    status: Open

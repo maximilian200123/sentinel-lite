@@ -1,0 +1,10 @@
+# Local tools, caches and credentials: never leave this folder, never committed
+.tools/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+instance/
+*.db
+.env
