@@ -45,9 +45,9 @@ def insert(db_path: str, event: dict) -> int:
 
 
 def search_by_user(db_path: str, user: str) -> list[dict]:
-    query = f"SELECT doc FROM events WHERE user = '{user}' ORDER BY id"
     with closing(_connect(db_path)) as conn:
-        return [json.loads(r["doc"]) for r in conn.execute(query)]
+        rows = conn.execute("SELECT doc FROM events WHERE user = ? ORDER BY id", (user,))
+        return [json.loads(r["doc"]) for r in rows]
 
 
 def summary(db_path: str) -> dict:
