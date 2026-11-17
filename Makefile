@@ -22,13 +22,13 @@ export PYTHONDONTWRITEBYTECODE := 1
 BANDIT_SKIPS = $(shell $(PY) scripts/open_bugs.py bandit)
 AUDIT_IGNORES = $(shell $(PY) scripts/open_bugs.py pip-audit)
 
-.PHONY: setup run test test-seeded lint register register-check scan audit build check report
+.PHONY: lock setup run test test-seeded lint register register-check scan audit build check report
 
 setup:
 	$(PYTHON_BOOT) -c "import sys; sys.exit('Python 3.11+ required' if sys.version_info < (3, 11) else 0)"
 	$(PYTHON_BOOT) -m venv .venv
 	$(PY) -m pip install --quiet --upgrade pip
-	$(PY) -m pip install --quiet -r requirements.txt -r requirements-dev.txt
+	$(PY) -m pip install --quiet -r requirements.txt -c constraints.txt -r requirements-dev.txt
 	$(PY) scripts/init_env.py
 ifndef CI
 	git config core.hooksPath .githooks
@@ -58,12 +58,16 @@ scan:
 	$(PY) -m bandit -q -r app $(if $(BANDIT_SKIPS),-s $(BANDIT_SKIPS))
 
 audit:
-	$(PY) -m pip_audit --progress-spinner off -r requirements.txt $(AUDIT_IGNORES)
+	$(PY) -m pip_audit --progress-spinner off --no-deps --disable-pip -r constraints.txt $(AUDIT_IGNORES)
 
 # Build/import check: every module compiles and the app factory starts and serves /health.
 build:
 	$(PY) -m compileall -q app scripts
 	$(PY) -c "from app import create_app; assert create_app().test_client().get('/health').status_code == 200; print('build: app imports and serves /health')"
+
+# Re-resolve the runtime tree into constraints.txt (releases >= 14 days old).
+lock:
+	$(PY) scripts/lock.py
 
 check: lint register-check test scan audit build
 

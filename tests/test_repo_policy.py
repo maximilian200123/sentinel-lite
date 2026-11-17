@@ -162,3 +162,15 @@ def test_b10_hook_blocks_bare_push_while_on_main(tmp_path):
     result = subprocess.run([sys.executable, str(HOOK)], input=payload, capture_output=True, text=True,
                             check=False)
     assert result.returncode == 2
+
+
+def test_b08_lock_matches_requirements():
+    """constraints.txt (make lock) pins the whole tree and agrees with every direct pin."""
+    lock = {}
+    for line in (ROOT / "constraints.txt").read_text(encoding="utf-8").splitlines():
+        if line and not line.startswith("#"):
+            name, version = line.split("==")
+            lock[name.lower().replace("_", "-")] = version
+    for req in _requirements():
+        name, version = req.split("==")
+        assert lock.get(name.lower().replace("_", "-")) == version, f"{req} disagrees with constraints.txt"
