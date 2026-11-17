@@ -1,0 +1,25 @@
+name: governance
+
+# GitHub route 4 (Free, private repo): main cannot be protected server-side, so this
+# fails whenever a commit reaches main without a merged pull request (R-01, R-06).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  every-commit-came-from-a-pr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: python3 scripts/governance_check.py
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

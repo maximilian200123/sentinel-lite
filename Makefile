@@ -25,6 +25,8 @@ setup:
 	$(PYTHON_BOOT) -m venv .venv
 	$(PY) -m pip install --quiet --upgrade pip
 	$(PY) -m pip install --quiet -r requirements.txt -r requirements-dev.txt
+	git config core.hooksPath .githooks
+	$(PY) -m pre_commit install-hooks
 
 run:
 	$(PY) -m app

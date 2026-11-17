@@ -1,0 +1,8 @@
+#!/bin/sh
+# Runs the pre-commit framework (gitleaks, no-commit-to-branch, ...) on staged files.
+# PRE_COMMIT_HOME keeps hook environments inside the project folder.
+root="$(git rev-parse --show-toplevel)"
+export PRE_COMMIT_HOME="${PRE_COMMIT_HOME:-$root/.cache/pre-commit}"
+py="$root/.venv/bin/python"
+[ -x "$root/.venv/Scripts/python.exe" ] && py="$root/.venv/Scripts/python.exe"
+exec "$py" -m pre_commit run --hook-stage pre-commit

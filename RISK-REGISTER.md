@@ -4,8 +4,8 @@ Generated from `docs/risk-register.yaml` by `scripts/build_register.py`. Do not 
 
 | ID | Register | Asset | Bugs | L x I | Inherent | Res. L x I | Residual | Status | Evidence |
 |---|---|---|---|---|---|---|---|---|---|
-| R-01 | Operational | main branch of sentinel-lite (the code the professor clones) | B-10 | 4 x 4 | 16 (High) | 2 x 4 | 8 (Medium) | Open | - |
-| R-02 | Operational | Service API key and any credential the agent can read | B-01, B-07 | 4 x 5 | 20 (High) | 2 x 4 | 8 (Medium) | Open | - |
+| R-01 | Operational | main branch of sentinel-lite (the code the professor clones) | B-10 | 4 x 4 | 16 (High) | 2 x 4 | 8 (Medium) | Implemented | .githooks/pre-push; scripts/guard_push.py; .github/workflows/governance.yml; docs/evidence/push-refusals.md; docs/evidence/github-route.md |
+| R-02 | Operational | Service API key and any credential the agent can read | B-01, B-07 | 4 x 5 | 20 (High) | 2 x 4 | 8 (Medium) | Open | .gitleaks.toml; .pre-commit-config.yaml; docs/evidence/gitleaks-refusal.md |
 | R-03 | Operational | AI agent context: CLAUDE.md, memory/, skills/ | B-10 | 3 x 4 | 12 (Medium) | 2 x 3 | 6 (Low) | Open | - |
 | R-04 | Operational | CI pipeline and its GITHUB_TOKEN | B-09 | 3 x 5 | 15 (High) | 1 x 4 | 4 (Low) | Implemented | .github/workflows/ci.yml; tests/test_repo_policy.py::test_b09_third_party_actions_pinned_to_commit_sha; docs/evidence/zizmor-b09.md; docs/evidence/github-actions-settings.md |
 | R-05 | Operational | Runtime dependencies (requirements.txt) | B-08 | 4 x 3 | 12 (Medium) | 2 x 3 | 6 (Low) | Open | - |
