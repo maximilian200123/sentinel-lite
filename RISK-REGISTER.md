@@ -13,7 +13,7 @@ Generated from `docs/risk-register.yaml` by `scripts/build_register.py`. Do not 
 | R-07 | Internal | Stored security events (SQLite) and generated reports | B-02, B-03 | 4 x 4 | 16 (High) | 1 x 4 | 4 (Low) | Implemented | app/store.py; tests/test_seeded_bugs.py::test_b02_search_is_not_injectable; docs/evidence/b02-sqli.md; tests/test_seeded_bugs.py::test_b03_reports_cannot_escape_reports_dir; docs/evidence/b03-traversal.md |
 | R-08 | Internal | Ingest normaliser and detection rules | B-04, B-05 | 4 x 4 | 16 (High) | 2 x 3 | 6 (Low) | Implemented | app/rules.py; tests/test_seeded_bugs.py::test_b04_rule_file_cannot_run_code; tests/test_seeded_bugs.py::test_b04_rule_file_must_match_schema; docs/evidence/b04-yaml.md; app/pipeline.py; tests/test_seeded_bugs.py::test_b05_malformed_event_is_rejected_cleanly; tests/test_seeded_bugs.py::test_b05_oversized_body_is_rejected; docs/evidence/b05-input.md |
 | R-09 | Internal | Service control plane (/ingest, /admin/*) and its audit log | B-06, B-07 | 4 x 5 | 20 (High) | 1 x 4 | 4 (Low) | Implemented | app/__init__.py; tests/test_seeded_bugs.py::test_b06_endpoints_require_api_key; tests/test_seeded_bugs.py::test_b06_debug_mode_is_off; docs/evidence/b06-live.md; app/logsafe.py; tests/test_seeded_bugs.py::test_b07_log_lines_cannot_be_forged; docs/evidence/b07-logs.md |
-| R-10 | External | Analyst triage queue fed by ingested events | - | 4 x 4 | 16 (High) | 2 x 3 | 6 (Low) | Open | - |
+| R-10 | External | Analyst triage queue fed by ingested events | - | 4 x 4 | 16 (High) | 2 x 3 | 6 (Low) | Implemented | app/pipeline.py; app/intel.py; tests/test_app.py::test_enrichment_changes_the_outcome; tests/test_app.py::test_intel_check; docs/evidence/enrichment.md |
 
 ## Threat and control per risk
 
