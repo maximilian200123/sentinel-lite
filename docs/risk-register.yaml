@@ -15,7 +15,7 @@ risks:
     control: "Local no-commit-to-branch and pre-push guard refuse commits on main, pushes to main and non-fast-forward pushes; Claude Code deny rules plus a PreToolUse hook block the same commands for the agent; governance workflow flags any commit on main without a merged PR. L drops to 2, not 1: client-side hooks can be skipped with --no-verify and the workflow detects after the fact instead of preventing."
     residual_likelihood: 2
     residual_impact: 4
-    evidence: ".githooks/pre-push; scripts/guard_push.py; .github/workflows/governance.yml; docs/evidence/push-refusals.md; docs/evidence/github-route.md"
+    evidence: ".githooks/pre-push; scripts/guard_push.py; .github/workflows/governance.yml; docs/evidence/push-refusals.md; docs/evidence/commit-on-main-refused.md; docs/evidence/github-route.md"
     owner: "repo owner"
     status: Implemented
   - id: R-02
@@ -30,7 +30,7 @@ risks:
     control: "Key read from the environment (.env.example documents it); gitleaks in pre-commit and in CI; log redaction of tokens. L drops because two independent scanners must both miss a key; I drops to 4 because the key no longer lives in history or logs, but a leaked key still opens the API."
     residual_likelihood: 2
     residual_impact: 4
-    evidence: ".gitleaks.toml; .pre-commit-config.yaml; docs/evidence/gitleaks-refusal.md"
+    evidence: ".gitleaks.toml; .pre-commit-config.yaml; .github/workflows/ci.yml; docs/evidence/gitleaks-refusal.md"
     owner: "repo owner"
     status: Open
   - id: R-03

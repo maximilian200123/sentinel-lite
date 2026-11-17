@@ -1,0 +1,13 @@
+# Keeps SHA-pinned actions current (R-04). The cooldown waits 14 days after a release
+# before proposing it, so a hijacked release has time to be caught and pulled first.
+# Python dependencies are watched by pip-audit in CI instead (R-05).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    commit-message:
+      prefix: "chore(deps)"

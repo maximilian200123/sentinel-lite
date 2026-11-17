@@ -16,7 +16,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  # Same gate as `make check` locally: ruff (R-06), register check (R-01..R-10),
+  # pytest incl. seeded-bug regressions (R-02..R-09), bandit (R-07, R-08),
+  # pip-audit (R-05), build/import check.
+  check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -27,7 +30,33 @@ jobs:
         with:
           python-version: "3.12"
       - run: make setup
-      - run: make test
+      - run: make check
+
+  # Secret scanning of every commit this event adds (R-02). The binary is pinned by
+  # SHA-256, so no third-party action is involved.
+  gitleaks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install gitleaks (checksum-verified)
+        run: |
+          curl -sSfL -o gitleaks.tgz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tgz" | sha256sum -c -
+          tar -xzf gitleaks.tgz gitleaks
+      - name: Scan new commits
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          # Commits before the tag are the deliberately vulnerable baseline (B-01 lives there).
+          git cat-file -e "${BASE}^{commit}" 2>/dev/null || BASE=baseline-vulnerable
+          ./gitleaks git --no-banner --redact --config .gitleaks.toml --log-opts="${BASE}..HEAD"
 
   workflow-lint:
     runs-on: ubuntu-latest
@@ -39,6 +68,6 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-      # zizmor flags unpinned actions, excessive permissions and dangerous triggers.
+      # zizmor flags unpinned actions, excessive permissions and dangerous triggers (R-04).
       - run: pip install zizmor==1.32.0
       - run: zizmor --offline --min-severity low .github/workflows

@@ -1,7 +1,8 @@
 name: governance
 
 # GitHub route 4 (Free, private repo): main cannot be protected server-side, so this
-# fails whenever a commit reaches main without a merged pull request (R-01, R-06).
+# fails whenever a commit reaches main without a merged pull request, or through a PR
+# whose `ci` workflow did not pass (the Free-plan equivalent of required checks) (R-01, R-06).
 on:
   push:
     branches: [main]
@@ -10,6 +11,7 @@ on:
 permissions:
   contents: read
   pull-requests: read
+  actions: read
 
 jobs:
   every-commit-came-from-a-pr:
