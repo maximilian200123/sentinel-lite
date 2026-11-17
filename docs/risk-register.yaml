@@ -57,12 +57,12 @@ risks:
     bugs: [B-09]
     likelihood: 3
     impact: 5
-    control: "Every action pinned to a full commit SHA (tag in a comment), workflow default permissions contents: read, pull_request_target removed, zizmor lints the workflows. L drops to 1 because a SHA cannot be repointed; I stays 4 because a pinned action that was already malicious still runs."
+    control: "Every action pinned to a full commit SHA (tag in a comment) and GitHub's require-SHA-pinning Actions policy on; workflow and repo default token read-only; pull_request_target removed; zizmor lints the workflows on every PR. L drops to 1 because a SHA cannot be repointed; I stays 4 because a pinned action that was already malicious still runs."
     residual_likelihood: 1
     residual_impact: 4
-    evidence: ""
+    evidence: ".github/workflows/ci.yml; tests/test_repo_policy.py::test_b09_third_party_actions_pinned_to_commit_sha; docs/evidence/zizmor-b09.md; docs/evidence/github-actions-settings.md"
     owner: "repo owner"
-    status: Open
+    status: Implemented
   - id: R-05
     register: Operational
     asset: "Runtime dependencies (requirements.txt)"
