@@ -90,9 +90,9 @@ risks:
     control: "PR template with a mandatory self-review checklist and a local skills/review-pr pass whose findings go in every PR body; CI checks run on every PR. Review is agent-assisted, not an enforced gate, so L only drops to 3. An Actions-based reviewer with a stored API key would bring it to 2."
     residual_likelihood: 3
     residual_impact: 4
-    evidence: ""
+    evidence: ".github/pull_request_template.md; skills/review-pr/SKILL.md; scripts/review_pr.py; tests/test_review_pr.py::test_flags_banned_code; scripts/governance_check.py"
     owner: "repo owner"
-    status: Open
+    status: Implemented
   - id: R-07
     register: Internal
     asset: "Stored security events (SQLite) and generated reports"
