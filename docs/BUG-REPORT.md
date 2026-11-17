@@ -62,3 +62,28 @@ Line numbers refer to the tag: `git show baseline-vulnerable:<path>`.
   - Hooks and rules load when a session starts in this folder. A session started elsewhere is unguarded, which happened while this PR was being written.
   - A human can still edit `.claude/` or run `git push --no-verify`. The governance workflow detects the result after the fact.
   - The tripwire is a phrase list. A reworded poison passes it, which is why review of `memory/` matters.
+
+## B-01, Hardcoded API key in source
+
+- **Risk IDs / CWE / ATT&CK:** R-02 / CWE-798 (use of hard-coded credentials) / T1552.001 (unsecured credentials: credentials in files).
+- **Where:** `app/config.py:9` on `baseline-vulnerable`: `API_KEY = "sl_api_7Qm2…FAKE"` (fake; shortened here). It is read at `app/config.py:14`.
+- **How it was introduced:** a module-level constant next to the other settings, with a comment saying what the header is called. It reads like configuration, not like a secret, and "I'll move it to an env var later" is how most real leaks start.
+- **How it can be exploited:** anyone with read access to the repository (a clone, a fork, a CI log, a laptop backup) has the key forever, because it lives in history even after the line is deleted. Once B-06 adds authentication, that key opens `/ingest` and `/admin`. Safe reproduction: `tests/test_seeded_bugs.py::test_b01_*` fail on the tag. `gitleaks git --log-opts=baseline-vulnerable` with `.gitleaks.toml` reports `sentinel-api-key` at `app/config.py:9`.
+- **Impact on this app (C/I/A):** once auth exists: I = 4 (forged events, rule reloads) and C = 4 (event search, reports). Before B-06 the key protects nothing, which is its own finding (chain below).
+- **Blast radius beyond this app:**
+  - Every clone of the private repo carries the key, including the professor's copy. Any system that reuses it (another tool, a shared lab config) is exposed too.
+  - It chains with B-07, which writes the request's key into the log, and with B-09, where a `write-all` CI token could push a commit that changes or exfiltrates it.
+  - It also misleads review: gitleaks' generic rule *skips* this value because it contains "FAKE" (`memory/gitleaks-placeholder-blind-spot.md`). Scanners need a rule for the project's own key format.
+- **Likelihood x Impact before / after:** 4 x 5 = 20 (High) → 2 x 4 = 8 (Medium). The row also covers B-07.
+- **The fix (PR #6):**
+  - `load_settings()` reads `SENTINEL_API_KEY` from the environment, with **no fallback value**.
+  - `make setup` runs `scripts/init_env.py`, which writes a gitignored `.env` with a fresh `secrets.token_urlsafe(24)` key per install, and the Makefile exports it to `make run`/`make test`.
+  - `.env.example` documents the variable.
+  - The old key is dead: no code reads it anywhere, so it is effectively rotated.
+  - The scanner side came earlier: a gitleaks pre-commit hook and CI job with the `sl_api_` prefix rule (PRs #2, #3).
+  - SOPS/age encryption of a shared value was not needed, because each install generates its own key and nothing secret is committed.
+- **Proof the fix works:** `tests/test_seeded_bugs.py::test_b01_api_key_comes_from_environment` and `::test_b01_no_fallback_key_in_source` pass. `docs/evidence/gitleaks-refusal.md` shows a key in this format refused at commit time, and the CI `gitleaks` job scans every PR.
+- **Residual risk:**
+  - The old fake key stays in history at the tag, on purpose, as lab evidence. With a real key, the fix would also be rotation at the issuer and possibly a history rewrite.
+  - `.env` is plaintext on disk, protected only by file permissions.
+  - Until B-06 lands the key is still not *checked*. Fixing the storage doesn't create the control.

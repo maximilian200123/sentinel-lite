@@ -1,17 +1,15 @@
-"""Runtime settings for Sentinel-Lite."""
+"""Runtime settings for Sentinel-Lite. Secrets come only from the environment."""
 
 import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Key that clients send in the X-API-Key header.
-API_KEY = "sl_api_7Qm2Xv9Lk4Rt8Wn3Zp6Yb1FAKE"
-
 
 def load_settings() -> dict:
     return {
-        "API_KEY": API_KEY,
+        # Clients send this in X-API-Key. No default: without it, nothing authenticates.
+        "API_KEY": os.environ.get("SENTINEL_API_KEY") or None,
         "HOST": "127.0.0.1",
         "PORT": int(os.environ.get("SENTINEL_PORT", "5000")),
         "DB_PATH": os.environ.get("SENTINEL_DB", str(BASE_DIR / "instance" / "events.db")),
