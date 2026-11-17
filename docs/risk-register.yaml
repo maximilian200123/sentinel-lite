@@ -30,7 +30,7 @@ risks:
     control: "Key read from the environment (.env.example documents it); gitleaks in pre-commit and in CI; log redaction of tokens. L drops because two independent scanners must both miss a key; I drops to 4 because the key no longer lives in history or logs, but a leaked key still opens the API."
     residual_likelihood: 2
     residual_impact: 4
-    evidence: ".gitleaks.toml; .pre-commit-config.yaml; .github/workflows/ci.yml; docs/evidence/gitleaks-refusal.md"
+    evidence: "app/config.py; .env.example; scripts/init_env.py; tests/test_seeded_bugs.py::test_b01_api_key_comes_from_environment; .gitleaks.toml; .github/workflows/ci.yml; docs/evidence/gitleaks-refusal.md"
     owner: "repo owner"
     status: Open
   - id: R-03

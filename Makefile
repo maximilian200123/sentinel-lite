@@ -8,6 +8,10 @@ BIN := .venv/bin
 endif
 PY := $(BIN)/python
 
+# Local secrets: make setup writes .env (gitignored); make run/test read it from there.
+-include .env
+export SENTINEL_API_KEY
+
 # Every cache stays inside the project folder.
 export PIP_CACHE_DIR := $(CURDIR)/.cache/pip
 export PRE_COMMIT_HOME := $(CURDIR)/.cache/pre-commit
@@ -25,6 +29,7 @@ setup:
 	$(PYTHON_BOOT) -m venv .venv
 	$(PY) -m pip install --quiet --upgrade pip
 	$(PY) -m pip install --quiet -r requirements.txt -r requirements-dev.txt
+	$(PY) scripts/init_env.py
 ifndef CI
 	git config core.hooksPath .githooks
 	$(PY) -m pre_commit install-hooks

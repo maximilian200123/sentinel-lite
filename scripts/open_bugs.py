@@ -15,7 +15,6 @@ On main after Phase 5 this dict is empty and no exception remains.
 import sys
 
 OPEN_BUGS: dict[str, dict[str, list[str]]] = {
-    "B-01": {},
     "B-02": {"bandit": ["B608"]},
     "B-03": {},
     "B-04": {"bandit": ["B506"]},
