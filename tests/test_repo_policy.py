@@ -152,3 +152,13 @@ def test_b10_agent_context_has_no_instruction_to_bypass_controls():
         if POISON.search(line) and not NEGATION.search(line)
     ]
     assert hits == []
+
+
+@pytest.mark.seeded("B-10")
+def test_b10_hook_blocks_bare_push_while_on_main(tmp_path):
+    assert HOOK.is_file(), "PreToolUse hook script is missing"
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
+    payload = json.dumps({"tool_name": "Bash", "tool_input": {"command": "git push"}, "cwd": str(tmp_path)})
+    result = subprocess.run([sys.executable, str(HOOK)], input=payload, capture_output=True, text=True,
+                            check=False)
+    assert result.returncode == 2
