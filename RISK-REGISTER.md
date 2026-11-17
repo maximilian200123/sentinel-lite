@@ -12,7 +12,7 @@ Generated from `docs/risk-register.yaml` by `scripts/build_register.py`. Do not 
 | R-06 | Operational | main branch review quality | - | 4 x 4 | 16 (High) | 3 x 4 | 12 (Medium) | Implemented | .github/pull_request_template.md; skills/review-pr/SKILL.md; scripts/review_pr.py; tests/test_review_pr.py::test_flags_banned_code; scripts/governance_check.py |
 | R-07 | Internal | Stored security events (SQLite) and generated reports | B-02, B-03 | 4 x 4 | 16 (High) | 1 x 4 | 4 (Low) | Open | - |
 | R-08 | Internal | Ingest normaliser and detection rules | B-04, B-05 | 4 x 4 | 16 (High) | 2 x 3 | 6 (Low) | Open | - |
-| R-09 | Internal | Service control plane (/ingest, /admin/*) and its audit log | B-06, B-07 | 4 x 5 | 20 (High) | 1 x 4 | 4 (Low) | Open | - |
+| R-09 | Internal | Service control plane (/ingest, /admin/*) and its audit log | B-06, B-07 | 4 x 5 | 20 (High) | 1 x 4 | 4 (Low) | Open | app/__init__.py; tests/test_seeded_bugs.py::test_b06_endpoints_require_api_key; tests/test_seeded_bugs.py::test_b06_debug_mode_is_off; docs/evidence/b06-live.md |
 | R-10 | External | Analyst triage queue fed by ingested events | - | 4 x 4 | 16 (High) | 2 x 3 | 6 (Low) | Open | - |
 
 ## Threat and control per risk

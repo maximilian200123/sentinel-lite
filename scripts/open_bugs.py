@@ -19,7 +19,6 @@ OPEN_BUGS: dict[str, dict[str, list[str]]] = {
     "B-03": {},
     "B-04": {"bandit": ["B506"]},
     "B-05": {},
-    "B-06": {},
     "B-07": {},
     "B-08": {"pip-audit": ["PYSEC-2026-1873", "PYSEC-2026-1872", "PYSEC-2026-2275"]},
 }
