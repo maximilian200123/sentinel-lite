@@ -117,12 +117,12 @@ risks:
     bugs: [B-04, B-05]
     likelihood: 4
     impact: 4
-    control: "Pydantic model validates every event, request bodies capped, bad input returns 400 not 500; rules loaded with yaml.safe_load and checked against a schema. I drops to 3 because a flood of valid events can still slow ingest."
+    control: "Every event is parsed at the boundary (exact fields, string types and lengths, real IP addresses and ISO timestamps), request bodies capped, bad input returns 400 not 500; rules loaded with yaml.safe_load and checked against a schema. I drops to 3 because a flood of valid events can still slow ingest."
     residual_likelihood: 2
     residual_impact: 3
-    evidence: "app/rules.py; tests/test_seeded_bugs.py::test_b04_rule_file_cannot_run_code; tests/test_seeded_bugs.py::test_b04_rule_file_must_match_schema; docs/evidence/b04-yaml.md"
+    evidence: "app/rules.py; tests/test_seeded_bugs.py::test_b04_rule_file_cannot_run_code; tests/test_seeded_bugs.py::test_b04_rule_file_must_match_schema; docs/evidence/b04-yaml.md; app/pipeline.py; tests/test_seeded_bugs.py::test_b05_malformed_event_is_rejected_cleanly; tests/test_seeded_bugs.py::test_b05_oversized_body_is_rejected; docs/evidence/b05-input.md"
     owner: "repo owner"
-    status: Open
+    status: Implemented
   - id: R-09
     register: Internal
     asset: "Service control plane (/ingest, /admin/*) and its audit log"

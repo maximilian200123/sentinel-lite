@@ -11,6 +11,7 @@ def load_settings() -> dict:
         # Clients send this in X-API-Key. No default: without it, nothing authenticates.
         "API_KEY": os.environ.get("SENTINEL_API_KEY") or None,
         "HOST": "127.0.0.1",
+        "MAX_CONTENT_LENGTH": 64 * 1024,  # Flask answers 413 above this (B-05)
         "PORT": int(os.environ.get("SENTINEL_PORT", "5000")),
         "DB_PATH": os.environ.get("SENTINEL_DB", str(BASE_DIR / "instance" / "events.db")),
         "REPORTS_DIR": str(BASE_DIR / "reports"),
