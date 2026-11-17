@@ -9,7 +9,7 @@ Generated from `docs/risk-register.yaml` by `scripts/build_register.py`. Do not 
 | R-03 | Operational | AI agent context: CLAUDE.md, memory/, skills/ | B-10 | 3 x 4 | 12 (Medium) | 2 x 3 | 6 (Low) | Open | - |
 | R-04 | Operational | CI pipeline and its GITHUB_TOKEN | B-09 | 3 x 5 | 15 (High) | 1 x 4 | 4 (Low) | Implemented | .github/workflows/ci.yml; tests/test_repo_policy.py::test_b09_third_party_actions_pinned_to_commit_sha; docs/evidence/zizmor-b09.md; docs/evidence/github-actions-settings.md |
 | R-05 | Operational | Runtime dependencies (requirements.txt) | B-08 | 4 x 3 | 12 (Medium) | 2 x 3 | 6 (Low) | Open | - |
-| R-06 | Operational | main branch review quality | - | 4 x 4 | 16 (High) | 3 x 4 | 12 (Medium) | Open | - |
+| R-06 | Operational | main branch review quality | - | 4 x 4 | 16 (High) | 3 x 4 | 12 (Medium) | Implemented | .github/pull_request_template.md; skills/review-pr/SKILL.md; scripts/review_pr.py; tests/test_review_pr.py::test_flags_banned_code; scripts/governance_check.py |
 | R-07 | Internal | Stored security events (SQLite) and generated reports | B-02, B-03 | 4 x 4 | 16 (High) | 1 x 4 | 4 (Low) | Open | - |
 | R-08 | Internal | Ingest normaliser and detection rules | B-04, B-05 | 4 x 4 | 16 (High) | 2 x 3 | 6 (Low) | Open | - |
 | R-09 | Internal | Service control plane (/ingest, /admin/*) and its audit log | B-06, B-07 | 4 x 5 | 20 (High) | 1 x 4 | 4 (Low) | Open | - |
