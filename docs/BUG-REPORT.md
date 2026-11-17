@@ -87,3 +87,29 @@ Line numbers refer to the tag: `git show baseline-vulnerable:<path>`.
   - The old fake key stays in history at the tag, on purpose, as lab evidence. With a real key, the fix would also be rotation at the issuer and possibly a history rewrite.
   - `.env` is plaintext on disk, protected only by file permissions.
   - Until B-06 lands the key is still not *checked*. Fixing the storage doesn't create the control.
+
+## B-06, No authentication on ingest/admin, Flask debug on
+
+- **Risk IDs / CWE / ATT&CK:** R-09 / CWE-306 (missing authentication for critical function), CWE-489 (active debug code) / T1190 (exploit public-facing application).
+- **Where:** `app/__init__.py:20` on `baseline-vulnerable` (`app.debug = True`). No authentication anywhere: the routes at `:32` (`/ingest`), `:62` (`/admin/rules/reload`), `:43`, `:49` and `:56` accept any caller.
+- **How it was introduced:** "it only listens on localhost" and "debug makes errors readable" are the two most common reasons this ships. The API key existed in config (B-01) but nothing checked it, so it looked as if auth was there.
+- **How it can be exploited:**
+  - Any local process, or anyone who can reach the port (a forwarded port, a container sharing the network, a browser page sending a simple POST), can inject events, reload rules, search all events and read reports.
+  - With debug on, an unhandled exception serves the Werkzeug debugger, an in-browser Python console guarded only by a PIN derived from machine data.
+  - Safe reproduction: `tests/test_seeded_bugs.py::test_b06_*` fail on the tag (10 endpoint/key combinations plus debug). On the tag, `make run` logs `Debugger is active!`.
+- **Impact on this app (C/I/A):** C = 4 (all stored events and reports readable), I = 5 (forged events poison triage, rule reload swaps detection logic), A = 3 (ingest flooding). The debug console gives code execution, so it is the full host.
+- **Blast radius beyond this app:**
+  - This is the front door for every other bug. It turns B-02 (SQLi), B-03 (traversal) and B-04 (YAML code execution through `/admin/rules/reload`) from "needs access" into "anyone who can reach the port".
+  - Forged events with clean IPs can hide real ones from the analysts who rely on `risk_score`.
+  - The debugger console runs as the user who started the service: their `.env`, SSH keys and gh credentials.
+- **Likelihood x Impact before / after:** 4 x 5 = 20 (High) → 1 x 4 = 4 (Low). The row also covers B-07.
+- **The fix (PR #7):**
+  - A `before_request` check requires `X-API-Key` on every endpoint except `/health` and compares it with `hmac.compare_digest`, so the comparison takes the same time whatever the input.
+  - With no key configured nothing authenticates (fail closed).
+  - `app.debug = True` is removed, leaving Flask's default (off).
+  - The bind address stays `127.0.0.1`, set in `config.py`.
+- **Proof the fix works:** `tests/test_seeded_bugs.py::test_b06_endpoints_require_api_key` (10 cases) and `::test_b06_debug_mode_is_off` pass. In `docs/evidence/b06-live.md` the running server answers 401 to a missing or guessed key and logs `Debug mode: off`.
+- **Residual risk:**
+  - One shared static key: anyone holding it has full access, there are no per-client identities or scopes, and rotation is manual (edit `.env`, restart).
+  - No rate limiting, so a key can be guessed online slowly. A 32-byte random key makes that impractical, but nothing records the attempts.
+  - Plain HTTP on loopback. Exposing the service beyond localhost would need TLS in front.

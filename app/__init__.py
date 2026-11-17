@@ -1,5 +1,6 @@
 """Sentinel-Lite: a small log-enrichment service."""
 
+import hmac
 import logging
 import os
 
@@ -17,13 +18,24 @@ def create_app(overrides: dict | None = None, intel: IntelProvider | None = None
     app = Flask(__name__)
     app.config.from_mapping(config.load_settings())
     app.config.from_mapping(overrides or {})
-    app.debug = True
+    # Debug stays off (Flask's default): the Werkzeug debugger is a remote Python console.
 
     store.init(app.config["DB_PATH"])
     state = {
         "intel": intel or LocalFeedProvider(app.config["INTEL_FEED"]),
         "rules": load_rules(app.config["RULES_DIR"]),
     }
+
+    @app.before_request
+    def require_api_key():
+        """Every endpoint except /health needs X-API-Key. No key configured means no access."""
+        if request.endpoint == "health":
+            return None
+        expected = app.config["API_KEY"] or ""
+        supplied = request.headers.get("X-API-Key", "")
+        if not expected or not hmac.compare_digest(supplied.encode(), expected.encode()):
+            return {"error": "missing or invalid API key"}, 401
+        return None
 
     @app.get("/health")
     def health():
