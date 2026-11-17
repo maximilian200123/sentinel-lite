@@ -1,0 +1,7 @@
+# Dev and CI tools only, never imported by the app. Versions at least two weeks old when pinned.
+pytest==9.2.0
+ruff==0.17.3
+bandit==1.9.4
+pip-audit==2.10.1
+pre-commit==4.7.0
+openpyxl==3.1.5

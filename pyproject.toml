@@ -1,0 +1,18 @@
+[project]
+name = "sentinel-lite"
+version = "0.1.0"
+description = "Small log-enrichment service for the ULBS Module 4 risk lab"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-p no:cacheprovider"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 110
+extend-exclude = [".tools", ".cache", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

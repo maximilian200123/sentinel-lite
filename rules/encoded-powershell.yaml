@@ -1,0 +1,7 @@
+id: SL-0002
+title: PowerShell launched with an encoded command
+attack: T1059.001
+risk: 40
+match:
+  field: message
+  contains: ["powershell -enc", "powershell.exe -encodedcommand"]

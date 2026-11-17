@@ -1,0 +1,1 @@
+{"ts": "2026-11-17T09:15:00", "src_ip": "10.0.0.31", "dst_ip": "10.0.0.8", "user": "bob", "message": "process start: powershell -File C:/scripts/backup.ps1"}

@@ -1,0 +1,1 @@
+{"ts": "2026-11-17T08:00:09", "src_ip": "10.0.0.20", "dst_ip": "10.0.0.5", "user": "alice", "message": "sshd[812]: Accepted publickey for alice from 10.0.0.20 port 50110 ssh2"}

@@ -1,0 +1,7 @@
+id: SL-0001
+title: Repeated failed SSH password logins
+attack: T1110.001
+risk: 30
+match:
+  field: message
+  contains: ["failed password for"]

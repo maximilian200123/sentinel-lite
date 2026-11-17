@@ -1,0 +1,1 @@
+{"ts": "2026-11-17T08:00:01", "src_ip": "203.0.113.66", "dst_ip": "10.0.0.5", "user": "root", "message": "sshd[811]: Failed password for root from 203.0.113.66 port 52211 ssh2"}

@@ -1,0 +1,9 @@
+{
+  "source": "local snapshot shaped like a MISP attribute export; addresses are RFC 5737 documentation ranges",
+  "pulled_at": "2026-11-17T00:00:00Z",
+  "indicators": [
+    {"type": "ip-src", "value": "203.0.113.66", "score": 50, "description": "SSH brute-force source seen across sensor fleet"},
+    {"type": "ip-src", "value": "198.51.100.23", "score": 60, "description": "Known C2 relay for commodity loader"},
+    {"type": "ip-dst", "value": "192.0.2.200", "score": 40, "description": "Phishing landing page host"}
+  ]
+}
