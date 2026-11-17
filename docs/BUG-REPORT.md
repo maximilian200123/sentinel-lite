@@ -154,3 +154,26 @@ Line numbers refer to the tag: `git show baseline-vulnerable:<path>`.
 - **Residual risk:**
   - Placeholders protect values, not identifiers. A future feature that lets the user choose a column or sort order needs an allowlist.
   - The search still returns all events for a user to any key holder, because there are no per-user permissions.
+
+## B-03, Path traversal in report download
+
+- **Risk IDs / CWE / ATT&CK:** R-07 / CWE-22 (path traversal) / T1190 (exploit public-facing application). The goal is T1005, data from the local system.
+- **Where:** `app/__init__.py:49-54` on `baseline-vulnerable`: route `/reports/<path:name>` and `os.path.join(app.config["REPORTS_DIR"], name)` passed to `send_file`.
+- **How it was introduced:** `<path:name>` looks like a feature ("reports may live in sub-folders"), and `os.path.isfile` looks like a check. But `os.path.join` keeps `..` segments, and on Windows it also treats `\` as a separator, and nothing compared the result with the reports folder.
+- **How it can be exploited:** Werkzeug decodes `%2f` (and `%5c`) before routing, so `GET /reports/..%2f<file>` reads any file the service user can read, relative to `reports/`. In a checkout, `..%2f.env` gives the API key (B-01's fix moved it there), and `..%2finstance%2fevents.db` gives the whole event store. Safe reproduction: `tests/test_seeded_bugs.py::test_b03_reports_cannot_escape_reports_dir` (2 cases) fails on the tag. `scripts/probes/b03_traversal.py` leaks a harmless marker with 3 of 4 encodings on the tag (`docs/evidence/b03-traversal.md`).
+- **Impact on this app (C/I/A):** C = 4: the event store, `.env` with the API key, the source and anything else the user running it can read.
+- **Blast radius beyond this app:**
+  - The process runs as the student, so readable files include `~/.ssh`, browser profiles, `~/.gitconfig` and other projects' `.env` files, by guessing a path relative to the repo.
+  - It chains with B-01's fix: reading `.env` returns the key, which unlocks B-06's authenticated endpoints.
+  - It turns a "read-only" reporting endpoint into a credential source.
+- **Likelihood x Impact before / after:** R-07 goes from 4 x 4 = 16 (High) to 1 x 4 = 4 (Low). Both of its bugs are now fixed.
+- **The fix (PR #10):**
+  - The route takes a single path segment (`<name>`, no `path:` converter).
+  - The name must match an allowlist (`[A-Za-z0-9][A-Za-z0-9_-]{0,63}\.txt`, so no dots-only names and no separators).
+  - The resolved path's parent must equal the resolved `REPORTS_DIR`.
+  - The file is served with Flask's `send_from_directory`, which applies `safe_join` once more.
+  - Anything else gets 404 and gives nothing away.
+- **Proof the fix works:** both `test_b03_*` cases pass. `docs/evidence/b03-traversal.md` shows 3 leaks before and 0 after, for the same requests.
+- **Residual risk:**
+  - Sub-folders under `reports/` are no longer reachable. That's an accepted feature loss, and adding them back would need a second allowlist.
+  - Symlinks placed inside `reports/` by someone with write access could still point outside. `resolve()` follows them, and the parent check then refuses them. Hard links are not detected.

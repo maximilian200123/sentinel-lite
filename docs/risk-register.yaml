@@ -105,9 +105,9 @@ risks:
     control: "Parameterized queries; report names resolved and confined to reports/ with an allowlist. Regression tests send the exact payloads. L drops to 1 because both classes are removed, not filtered."
     residual_likelihood: 1
     residual_impact: 4
-    evidence: "app/store.py; tests/test_seeded_bugs.py::test_b02_search_is_not_injectable; docs/evidence/b02-sqli.md"
+    evidence: "app/store.py; tests/test_seeded_bugs.py::test_b02_search_is_not_injectable; docs/evidence/b02-sqli.md; tests/test_seeded_bugs.py::test_b03_reports_cannot_escape_reports_dir; docs/evidence/b03-traversal.md"
     owner: "repo owner"
-    status: Open
+    status: Implemented
   - id: R-08
     register: Internal
     asset: "Ingest normaliser and detection rules"
