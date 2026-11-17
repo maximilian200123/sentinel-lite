@@ -177,3 +177,26 @@ Line numbers refer to the tag: `git show baseline-vulnerable:<path>`.
 - **Residual risk:**
   - Sub-folders under `reports/` are no longer reachable. That's an accepted feature loss, and adding them back would need a second allowlist.
   - Symlinks placed inside `reports/` by someone with write access could still point outside. `resolve()` follows them, and the parent check then refuses them. Hard links are not detected.
+
+## B-04, Unsafe YAML loading of detection rules
+
+- **Risk IDs / CWE / ATT&CK:** R-08 / CWE-502 (deserialization of untrusted data) / T1059.006 (command and scripting interpreter: Python). Delivery is T1190 through `/admin/rules/reload`.
+- **Where:** `app/rules.py:32` on `baseline-vulnerable`: `doc = yaml.load(f, Loader=yaml.Loader)`, reached at startup and through `POST /admin/rules/reload` (`app/__init__.py:62-66`).
+- **How it was introduced:** `yaml.load` is the name everyone remembers, and passing an explicit `Loader=` silences PyYAML's old warning, so it looks deliberate. Rule files feel like "our own config", so nobody treats them as untrusted input.
+- **How it can be exploited:** a rule file containing `!!python/object/apply:<callable> [args]` makes PyYAML call that function while parsing. Anyone who can place a file in `rules/` (a PR, a shared folder, a future "upload rule" feature) and trigger a reload runs code as the service user. Safe reproduction: `tests/test_seeded_bugs.py::test_b04_rule_file_cannot_run_code` and `::test_b04_rule_file_must_match_schema` fail on the tag. `scripts/probes/b04_yaml.py` creates a harmless marker folder on the tag, and the reload returns 500 *after* the code ran (`docs/evidence/b04-yaml.md`).
+- **Impact on this app (C/I/A):** C, I and A are all 5: code execution as the user running the service. A malformed but harmless rule also crashed the reload (500).
+- **Blast radius beyond this app:**
+  - Code execution reaches everything the student's account can: `.env`, `~/.ssh`, gh credentials, and git, which on route 4 can push.
+  - Chains with B-06: before PR #7 the reload endpoint needed no key, so writing one file into `rules/` was enough.
+  - Chains with B-10: a poisoned agent asked to "add a detection rule" could commit the payload.
+  - Detection rules are the definition of what the security function sees. Silently replacing them blinds it, which is R-08's own impact.
+- **Likelihood x Impact before / after:** R-08 goes from 4 x 4 = 16 (High) to 2 x 3 = 6 (Low) once B-05 is fixed too.
+- **The fix (PR #11):**
+  - `yaml.safe_load` builds only plain data (dicts, lists, strings, numbers), so Python tags are a parse error.
+  - Each document goes through `parse_rule`, a strict schema: exact keys, types, `SL-0000` ids, ATT&CK id format, risk 0–100, `match.field` from an allowlist, and a non-empty `contains` list.
+  - Loading is all-or-nothing. On a bad file the reload returns **400 with the reason and keeps the previous rules active**, so detection never goes blind.
+  - bandit's `B506` exception leaves `scripts/open_bugs.py` with the bug. bandit now runs with **no exceptions at all**.
+- **Proof the fix works:** both `test_b04_*` tests pass. `docs/evidence/b04-yaml.md` shows the same file before (marker created, 500) and after (400, no marker, detection still works).
+- **Residual risk:**
+  - Whoever can edit `rules/` still controls *what* is detected, for example a rule that never matches. That is a review problem, which is why `rules/` is in CODEOWNERS.
+  - A rule with a very broad `contains` (like `"a"`) passes the schema and raises every event's score.

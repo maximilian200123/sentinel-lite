@@ -10,7 +10,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from app import config, logsafe, store
 from app.intel import IntelProvider, LocalFeedProvider
 from app.pipeline import INDICATOR_TAG, process
-from app.rules import load_rules
+from app.rules import RuleError, load_rules
 
 log = logging.getLogger("sentinel")
 REPORT_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}\.txt")
@@ -76,8 +76,13 @@ def create_app(overrides: dict | None = None, intel: IntelProvider | None = None
 
     @app.post("/admin/rules/reload")
     def reload_rules():
-        state["rules"] = load_rules(app.config["RULES_DIR"])
-        log.info("rules reloaded: %d", len(state["rules"]))
-        return {"loaded": [r.id for r in state["rules"]]}
+        try:
+            rules = load_rules(app.config["RULES_DIR"])
+        except RuleError as exc:
+            log.warning("rules reload refused, keeping %d active rules: %s", len(state["rules"]), exc)
+            return {"error": str(exc)}, 400
+        state["rules"] = rules
+        log.info("rules reloaded: %d", len(rules))
+        return {"loaded": [r.id for r in rules]}
 
     return app

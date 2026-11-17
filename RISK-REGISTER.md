@@ -11,7 +11,7 @@ Generated from `docs/risk-register.yaml` by `scripts/build_register.py`. Do not 
 | R-05 | Operational | Runtime dependencies (requirements.txt) | B-08 | 4 x 3 | 12 (Medium) | 2 x 3 | 6 (Low) | Open | - |
 | R-06 | Operational | main branch review quality | - | 4 x 4 | 16 (High) | 3 x 4 | 12 (Medium) | Implemented | .github/pull_request_template.md; skills/review-pr/SKILL.md; scripts/review_pr.py; tests/test_review_pr.py::test_flags_banned_code; scripts/governance_check.py |
 | R-07 | Internal | Stored security events (SQLite) and generated reports | B-02, B-03 | 4 x 4 | 16 (High) | 1 x 4 | 4 (Low) | Implemented | app/store.py; tests/test_seeded_bugs.py::test_b02_search_is_not_injectable; docs/evidence/b02-sqli.md; tests/test_seeded_bugs.py::test_b03_reports_cannot_escape_reports_dir; docs/evidence/b03-traversal.md |
-| R-08 | Internal | Ingest normaliser and detection rules | B-04, B-05 | 4 x 4 | 16 (High) | 2 x 3 | 6 (Low) | Open | - |
+| R-08 | Internal | Ingest normaliser and detection rules | B-04, B-05 | 4 x 4 | 16 (High) | 2 x 3 | 6 (Low) | Open | app/rules.py; tests/test_seeded_bugs.py::test_b04_rule_file_cannot_run_code; tests/test_seeded_bugs.py::test_b04_rule_file_must_match_schema; docs/evidence/b04-yaml.md |
 | R-09 | Internal | Service control plane (/ingest, /admin/*) and its audit log | B-06, B-07 | 4 x 5 | 20 (High) | 1 x 4 | 4 (Low) | Implemented | app/__init__.py; tests/test_seeded_bugs.py::test_b06_endpoints_require_api_key; tests/test_seeded_bugs.py::test_b06_debug_mode_is_off; docs/evidence/b06-live.md; app/logsafe.py; tests/test_seeded_bugs.py::test_b07_log_lines_cannot_be_forged; docs/evidence/b07-logs.md |
 | R-10 | External | Analyst triage queue fed by ingested events | - | 4 x 4 | 16 (High) | 2 x 3 | 6 (Low) | Open | - |
 
