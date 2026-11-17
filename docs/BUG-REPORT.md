@@ -226,3 +226,38 @@ Line numbers refer to the tag: `git show baseline-vulnerable:<path>`.
   - Pins without hashes. A compromised index could serve a different file under the same version. `pip install --require-hashes` would close that, at the cost of a heavier lock workflow.
   - The pins age. A new advisory against a pinned version fails `make check` and CI, which is the intended alarm, but someone still has to bump it. Dependabot only watches GitHub Actions here.
   - The dev tools in `requirements-dev.txt` are pinned but not part of the runtime lock or the audit.
+
+## B-05, Missing input validation and no request size limit
+
+- **Risk IDs / CWE / ATT&CK:** R-08 / CWE-20 (improper input validation), CWE-400 (uncontrolled resource consumption) / T1499 (endpoint denial of service). Poisoned data also serves T1565.001 (stored data manipulation).
+- **Where:**
+  - `app/__init__.py:34` on `baseline-vulnerable`: `raw = request.get_json(force=True)` accepts any body whatever its content type.
+  - `app/pipeline.py:12-21` (`normalize`) indexes `raw["ts"]` and friends with no type, shape or value checks.
+  - No `MAX_CONTENT_LENGTH` is set anywhere.
+- **How it was introduced:** the API's only client was "our own log shipper", so the shape was assumed. `force=True` is a common copy-paste fix for "my curl forgot the Content-Type".
+- **How it can be exploited:** `docs/evidence/b05-input.md` sends nine bodies to the baseline.
+  - An array, missing fields, a bad timestamp or an object as `user` causes **500** (unhandled exceptions).
+  - `src_ip="not-an-ip"` and a numeric `message` are **stored** (201), so later readers get garbage the enrichment and rules silently skip.
+  - A **2 MB** message is accepted and stored, and nothing stops 200 MB.
+  - Safe reproduction: `tests/test_seeded_bugs.py::test_b05_malformed_event_is_rejected_cleanly` (5 cases) and `::test_b05_oversized_body_is_rejected` fail on the tag.
+- **Impact on this app (C/I/A):**
+  - I = 4: invalid IPs never match intel, so a malicious source passes enrichment unflagged.
+  - A = 4: large bodies fill memory and the SQLite file, and each 500 is a full traceback in the log.
+  - C = 1.
+- **Blast radius beyond this app:**
+  - The event store feeds analysts and `make report`. Records that look valid but aren't (wrong types, fake IPs) break whatever reads them next: a SIEM import, a spreadsheet, a script that assumes `source.ip` parses.
+  - A disk filled by oversized events takes down everything else on the same disk.
+  - Chains with B-06: before PR #7 anyone could send these. Chains with B-07: before PR #8 every malformed body was also echoed into the log.
+- **Likelihood x Impact before / after:** R-08 goes from 4 x 4 = 16 (High) to 2 x 3 = 6 (Low). Both of its bugs (B-04, B-05) are now fixed.
+- **The fix (PR #13):**
+  - `normalize` is now the parsing boundary. It requires a JSON object with exactly `ts`, `src_ip`, `dst_ip`, `user` and `message`, each a non-empty string within a length cap (message ≤ 4096). The IPs must parse with `ipaddress`, and `ts` with `datetime.fromisoformat`. The stored IPs are the canonical form.
+  - Anything else raises `InvalidEvent`, which `/ingest` answers with **400** and a reason.
+  - `get_json(silent=True)` replaces `force=True`, so a non-JSON content type is a 400 too.
+  - `MAX_CONTENT_LENGTH = 64 KiB` makes Flask answer **413** before reading the body.
+  - The ingest log line now logs the parsed fields, not the raw ones.
+  - I used no new dependency. pydantic was the first plan, but five fields don't justify five more packages in the tree B-08 just locked.
+- **Proof the fix works:** all six `test_b05_*` cases pass. `docs/evidence/b05-input.md` shows the same nine bodies: 4 × 500 and 3 bad bodies stored before, and only 400/413 after.
+- **Residual risk:**
+  - Valid events can still be sent fast. There is no rate limit, so a key holder can fill the disk 64 KiB at a time.
+  - Valid but false events (a real-looking IP and a plausible message) pass, because validation checks the shape, not the truth.
+  - `ts` accepts naive timestamps and any date, including the future.

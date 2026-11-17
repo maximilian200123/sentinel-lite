@@ -9,7 +9,7 @@ from flask import Flask, jsonify, request, send_from_directory
 
 from app import config, logsafe, store
 from app.intel import IntelProvider, LocalFeedProvider
-from app.pipeline import INDICATOR_TAG, process
+from app.pipeline import INDICATOR_TAG, InvalidEvent, process
 from app.rules import RuleError, load_rules
 
 log = logging.getLogger("sentinel")
@@ -46,10 +46,13 @@ def create_app(overrides: dict | None = None, intel: IntelProvider | None = None
 
     @app.post("/ingest")
     def ingest():
-        raw = request.get_json(force=True)
+        raw = request.get_json(silent=True)  # None for a non-JSON body or content type
+        try:
+            event = process(raw, state["intel"], state["rules"])
+        except InvalidEvent as exc:
+            return {"error": f"invalid event: {exc}"}, 400
         log.info("ingest user=%s src_ip=%s message=%s",
-                 raw.get("user"), raw.get("src_ip"), raw.get("message"))
-        event = process(raw, state["intel"], state["rules"])
+                 event["user"]["name"], event["source"]["ip"], event["message"])
         event_id = store.insert(app.config["DB_PATH"], event)
         return jsonify({"id": event_id, "event": event}), 201
 
