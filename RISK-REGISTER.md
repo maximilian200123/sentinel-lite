@@ -7,7 +7,7 @@ Generated from `docs/risk-register.yaml` by `scripts/build_register.py`. Do not 
 | R-01 | Operational | main branch of sentinel-lite (the code the professor clones) | B-10 | 4 x 4 | 16 (High) | 2 x 4 | 8 (Medium) | Open | - |
 | R-02 | Operational | Service API key and any credential the agent can read | B-01, B-07 | 4 x 5 | 20 (High) | 2 x 4 | 8 (Medium) | Open | - |
 | R-03 | Operational | AI agent context: CLAUDE.md, memory/, skills/ | B-10 | 3 x 4 | 12 (Medium) | 2 x 3 | 6 (Low) | Open | - |
-| R-04 | Operational | CI pipeline and its GITHUB_TOKEN | B-09 | 3 x 5 | 15 (High) | 1 x 4 | 4 (Low) | Open | - |
+| R-04 | Operational | CI pipeline and its GITHUB_TOKEN | B-09 | 3 x 5 | 15 (High) | 1 x 4 | 4 (Low) | Implemented | .github/workflows/ci.yml; tests/test_repo_policy.py::test_b09_third_party_actions_pinned_to_commit_sha; docs/evidence/zizmor-b09.md; docs/evidence/github-actions-settings.md |
 | R-05 | Operational | Runtime dependencies (requirements.txt) | B-08 | 4 x 3 | 12 (Medium) | 2 x 3 | 6 (Low) | Open | - |
 | R-06 | Operational | main branch review quality | - | 4 x 4 | 16 (High) | 3 x 4 | 12 (Medium) | Open | - |
 | R-07 | Internal | Stored security events (SQLite) and generated reports | B-02, B-03 | 4 x 4 | 16 (High) | 1 x 4 | 4 (Low) | Open | - |
@@ -35,7 +35,7 @@ Generated from `docs/risk-register.yaml` by `scripts/build_register.py`. Do not 
 ### R-04, CI pipeline and its GITHUB_TOKEN
 - Threat: A third-party action's moving tag is repointed to malicious code, or a PR's code runs under pull_request_target with a write token (T1195.002)
 - Vulnerability: Actions referenced by @v4 tags, permissions: write-all, pull_request_target checking out PR code
-- Control and why the score drops: Every action pinned to a full commit SHA (tag in a comment), workflow default permissions contents: read, pull_request_target removed, zizmor lints the workflows. L drops to 1 because a SHA cannot be repointed; I stays 4 because a pinned action that was already malicious still runs.
+- Control and why the score drops: Every action pinned to a full commit SHA (tag in a comment) and GitHub's require-SHA-pinning Actions policy on; workflow and repo default token read-only; pull_request_target removed; zizmor lints the workflows on every PR. L drops to 1 because a SHA cannot be repointed; I stays 4 because a pinned action that was already malicious still runs.
 
 ### R-05, Runtime dependencies (requirements.txt)
 - Threat: A dependency with a published CVE ships, or an unpinned install silently pulls a different version (T1195.001)
