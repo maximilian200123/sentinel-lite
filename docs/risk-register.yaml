@@ -150,6 +150,6 @@ risks:
     control: "Ingest enriches every event through an IntelProvider (local feed, MISP provider available); a match adds threat.indicator.matched and raises risk_score. L stays 2 because the feed is only as fresh as its last pull."
     residual_likelihood: 2
     residual_impact: 3
-    evidence: ""
+    evidence: "app/pipeline.py; app/intel.py; tests/test_app.py::test_enrichment_changes_the_outcome; tests/test_app.py::test_intel_check; docs/evidence/enrichment.md"
     owner: "repo owner"
-    status: Open
+    status: Implemented
